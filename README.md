@@ -25,7 +25,7 @@ This package give you next opportunities:
 
 ### Add package to your project:
 ```
-composer require kirill-dan/uploadimage
+composer require kirill-dan/uploadimage 1.*
 ```
 
 ### Add to file config/app.php next entries:
