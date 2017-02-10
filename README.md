@@ -34,6 +34,7 @@ Section Providers:
 ```php
 'providers' => [
     .......
+    Spatie\Glide\GlideServiceProvider::class,
     Dan\UploadImage\UploadImageServiceProvider::class,
 ]
 ```
@@ -42,6 +43,7 @@ Section Facades:
 ```php
 'aliases' => [
     .......
+    'GlideImage' => Spatie\Glide\GlideImageFacade::class,
     'UploadImage' => Dan\UploadImage\UploadImageFacade::class,
 ]
 ```
