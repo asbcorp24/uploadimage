@@ -23,6 +23,9 @@ return [
         // Array with width thumbnails for images.
         'thumbnails' => ['200', '400'],
 
+        // Watermark image status (default disable).
+        'watermark_status' => false,
+
         // Watermark image.
         'watermark_path' => '/images/design/watermark.png',
 
@@ -39,6 +42,9 @@ return [
         'previewWidth' => 200,
 
         // Folder name for upload images from WYSIWYG editor.
-        'editor_folder' => 'editor_post'
+        'editor_folder' => 'editor_post',
+
+        // Storage image which uploaded from WYSIWYG editor into the DB in the Base64 (default storage on the disk).
+        'base64_storage' => false
     ]
 ];

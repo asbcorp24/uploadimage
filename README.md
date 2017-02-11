@@ -1,4 +1,4 @@
-# UploadImage v1.0
+# UploadImage v1.0.1
 
 For Laravel 5.3 / 5.4
 

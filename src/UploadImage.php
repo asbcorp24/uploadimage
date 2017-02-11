@@ -42,6 +42,11 @@ class UploadImage
     protected $thumbnails;
 
     /**
+     * Watermark image status (default disable).
+     */
+    protected $watermark_status;
+
+    /**
      * Watermark image.
      */
     protected $watermark_path;
@@ -84,6 +89,7 @@ class UploadImage
         $this->originalResize = $config['originalResize'];
         $this->quality = $config['quality'];
         $this->thumbnails = $config['thumbnails'];
+        $this->watermark_status = $config['watermark_status'];
         $this->watermark_path = $config['watermark_path'];
         $this->watermark_video_path = $config['watermark_video_path'];
         $this->watermark_text = $config['watermark_text'];
@@ -160,10 +166,29 @@ class UploadImage
                 $watermark = $this->watermark_video_path;
                 $markPos = 'center';
                 $markPad = 0;
+
+                // Create array with watermark data.
+                $watermark_array = [
+                    'mark' => public_path() . $watermark,
+                    'markpad' => $markPad,
+                    'markpos' => $markPos
+                ];
             } else {
-                $watermark = $this->watermark_path;
-                $markPos = 'bottom-right';
-                $markPad = 5;
+                if ($this->watermark_status) {
+                    $watermark = $this->watermark_path;
+                    $markPos = 'bottom-right';
+                    $markPad = 5;
+
+                    // Create array with watermark data.
+                    $watermark_array = [
+                        'mark' => public_path() . $watermark,
+                        'markpad' => $markPad,
+                        'markpos' => $markPos
+                    ];
+                } else {
+                    // Create empty array.
+                    $watermark_array = [];
+                }
             }
 
             // If image width more then originalResize - make resize it.
@@ -171,23 +196,17 @@ class UploadImage
                 // Resize saved image and save to original folder
                 // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
                 GlideImage::create($originalPath)
-                    ->modify([
+                    ->modify(array_merge([
                         'w' => $this->originalResize,
-                        'q' => $this->quality,
-                        'mark' => public_path() . $watermark,
-                        'markpad' => $markPad,
-                        'markpos' => $markPos
-                    ])
+                        'q' => $this->quality
+                    ], $watermark_array))
                     ->save($originalPath);
             } // Add only watermark and change quality for image.
             else {
                 GlideImage::create($originalPath)
-                    ->modify([
+                    ->modify(array_merge([
                         'q' => $this->quality,
-                        'mark' => public_path() . $watermark,
-                        'markpad' => $markPad,
-                        'markpos' => $markPos
-                    ])
+                    ], $watermark_array))
                     ->save($originalPath);
             }
 
@@ -345,7 +364,7 @@ class UploadImage
         $images_body = $this->getImagesFromBody($textBody);
 
         // Delete body images from disk.
-        if(count($images_body) > 0) {
+        if (count($images_body) > 0) {
             $this->delete($images_body, $this->editor_folder);
         }
     }

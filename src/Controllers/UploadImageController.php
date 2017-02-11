@@ -18,12 +18,19 @@ class UploadImageController extends Controller
      */
     protected $editor_folder;
 
+    /**
+     * Storage image which uploaded from WYSIWYG editor into the DB in the Base64 (default storage on the disk).
+     */
+    protected $base64_storage;
+
     // Get settings from config file.
     public function __construct()
     {
         $config = \Config::get('upload-image.image-settings');
 
         $this->editor_folder = $config['editor_folder'];
+        //$this->base64_storage = $config['base64_storage'];
+        $this->base64_storage = false;
     }
 
     /**
@@ -95,15 +102,13 @@ class UploadImageController extends Controller
                 // Get image name.
                 $image_name = $image['name'];
 
-                // Status to convert file in base64 format.
-                $convertToBase64 = false;
-
-                if ($convertToBase64) {
+                // Check status. If true then to convert file in base64 format.
+                if ($this->base64_storage) {
                     // Convert image to base64 file.
                     $image_path_name = UploadImage::convertToBase64($image_path_file);
 
                     // Delete saved image (use if file need convert to base64 file).
-                    UploadImage::delete($image_name, $this->editor_folder, false);
+                    UploadImage::delete($image_name, $this->editor_folder);
                 }
 
                 if (!empty($image_name)) {
@@ -138,7 +143,7 @@ class UploadImageController extends Controller
             $image_name = explode('/', $request->get('file'));
 
             // Delete image from server.
-            UploadImage::delete(last($image_name), $this->editor_folder, false);
+            UploadImage::delete(last($image_name), $this->editor_folder);
         }
 
         //return response()->json(['status' => 200]);
