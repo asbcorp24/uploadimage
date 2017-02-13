@@ -4,6 +4,7 @@ For Laravel 5.3 / 5.4
 
 * [Demo](https://yousuper.org/)
 * [Site author](https://cleverman.org/)
+* [Rus article](https://cleverman.org/post/37) 
 
 This package give you next opportunities:
  * Easy upload image file to the content type folder
@@ -183,7 +184,7 @@ return view('posts.index', [
  * (if true - use real image width, if false (default) - use preview width from settings)
  * @param bool $watermark add watermark to image (by default - disable)
  *
- * @return string new image stream Base64
+ * @return array new image stream Base64
  */
 UploadImage::preview($file, $contentName, $real_width = false, $watermark = false);
 ```
