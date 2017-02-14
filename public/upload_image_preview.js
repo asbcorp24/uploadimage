@@ -11,38 +11,32 @@ $(document).ready(function () {
      * </div>
      */
     $('.image-preview-block').on('change', '.image-preview-input', function () {
+        var file = this.files[0];
+        if (file != null && file.type.match('image.*')) {
+            var reader = new FileReader();
 
-        var image = $('.image-preview-input')[0].files[0];
+            // Get settings for preview.
+            $.ajax({
+                data: {'preview': true},
+                type: "POST",
+                url: "/ajax/uploader/preview",
+                cache: false,
+                headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                dataType: 'json',
+                success: function (settings) {
+                    console.log(settings);
+                    reader.onload = function (e) {
+                        var preview = '<img src="' + e.target.result + '" class="img-rounded"/>';
+                        $('.image-preview-block .image-preview-image').empty().html(preview).css('width', settings.preview_width)
+                    };
 
-        // Upload file on the server.
-        data = new FormData();
-        data.append("file", image);
-        $.ajax({
-            data: data,
-            type: "POST",
-            url: "/ajax/uploader/preview",
-            cache: false,
-            headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-            contentType: false,
-            processData: false,
-            success: function (image) {
+                    reader.onerror = function (event) {
+                        console.log(event.target.error.code);
+                    };
 
-                // Clear old data.
-                $('.image-preview-block .image-preview-image').html('');
-
-                // If exist error then show it.
-                if (typeof image['error'] == 'undefined') {
-                    var preview = '<img src="' + image['url'] + '" class="img-rounded"/>';
+                    reader.readAsDataURL(file)
                 }
-                // Show image preview.
-                else {
-                    var preview = '<div class="alert alert-danger">' + image['error'] + '</div>';
-                }
-
-                // Show data (image or error).
-                $('.image-preview-block .image-preview-image').html(preview);
-            }
-        });
-    });
-
+            });
+        }
+    })
 });

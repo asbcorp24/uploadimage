@@ -23,6 +23,11 @@ class UploadImageController extends Controller
      */
     protected $base64_storage;
 
+    /**
+     * Width for preview image.
+     */
+    protected $previewWidth;
+
     // Get settings from config file.
     public function __construct()
     {
@@ -31,6 +36,7 @@ class UploadImageController extends Controller
         $this->editor_folder = $config['editor_folder'];
         //$this->base64_storage = $config['base64_storage'];
         $this->base64_storage = false;
+        $this->previewWidth = $config['previewWidth'];
     }
 
     /**
@@ -154,30 +160,9 @@ class UploadImageController extends Controller
      */
     public function preview(Request $request)
     {
-        // Check exist file (file or link).
-        if ($request->file('file')) {
-            $file = Input::file('file');
-
-            // Upload and save image.
-            $image = UploadImage::preview($file, $this->editor_folder);
-
-            // Some errors in form.
-            if (isset($image['error'])) {
-                $respond = [
-                    "error" => $image['error']
-                ];
-
-                return response()->json($respond);
-            }
-
-            // Get URL to file.
-            $image_path_name = $image['url'];
-
-            $respond = [
-                "url" => $image_path_name
-            ];
-
-            return response()->json($respond);
+        // Check exist preview request.
+        if ($request->get('preview')) {
+            return response()->json(['preview_width' => $this->previewWidth]);
         }
     }
 }

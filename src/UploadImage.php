@@ -140,7 +140,7 @@ class UploadImage
 
                 // If width image < $this->min_width (default 500px).
                 if ($imageSize[0] < $this->min_width) {
-                    return '';
+                    return ['error' => 'Image should be more then ' . $imageSize[0] . 'px'];
                 }
 
                 $ind = time() . '_' . mb_strtolower(str_random(8));
