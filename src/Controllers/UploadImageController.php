@@ -8,8 +8,8 @@ namespace Dan\UploadImage\Controllers;
 
 use Dan\UploadImage\UploadImageFacade as UploadImage;
 use Illuminate\Routing\Controller;
-use Illuminate\Support\Facades\Input;
 use Illuminate\Http\Request;
+use Dan\UploadImage\Exceptions\UploadImageException;
 
 class UploadImageController extends Controller
 {
@@ -38,44 +38,43 @@ class UploadImageController extends Controller
     public function upload(Request $request)
     {
         // Check exist file (files or link).
-        if ($request->file('files') || $request->get('image')) {
+        if (!$request->file('files') && !$request->get('image')) {
+            return response()->json(['status' => 500]);
+        }
 
-            // If array with files.
-            if ($request->file('files')) {
-                $files = Input::file('files');
-            }
+        // If array with files.
+        if ($request->file('files')) {
+            $files = $request->file('files');
+        }
 
-            // If link to file.
-            if ($request->get('image')) {
-                // Get file from url.
-                $files[] = $request->get('image');
-            }
+        // If link to file.
+        if ($request->get('image')) {
+            // Get file from url.
+            $files[] = $request->get('image');
+        }
 
-            // If file is array with many files.
-            if (is_array($files)) {
+        // If file is array with many files.
+        if (!is_array($files)) {
+            return response()->json(['status' => 500]);
+        }
 
-                $images = [];
-                $errors = [];
+        $images = [];
+        $errors = [];
 
-                // Get every file and upload it.
-                foreach ($files as $file) {
-                    try {
-                        // Upload and save image.
-                        $savedImage = UploadImage::upload($file, $this->editor_folder);
+        // Get every file and upload it.
+        foreach ($files as $file) {
+            try {
+                // Upload and save image.
+                $savedImage = UploadImage::upload($file, $this->editor_folder);
 
-                        // Get only image url.
-                        $images[] = $savedImage->getImageUrl();
-
-                    } catch (\Exception $e) {
-                        $errors[] = $e->getMessage();
-                    }
-                }
-
-                return response()->json(['url' => $images, 'error' => $errors]);
+                // Get only image url.
+                $images[] = $savedImage->getImageUrl();
+            } catch (UploadImageException $e) {
+                $errors[] = $e->getMessage();
             }
         }
 
-        return response()->json(['status' => 500]);
+        return response()->json(['url' => $images, 'error' => $errors]);
     }
 
     /**

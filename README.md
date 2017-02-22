@@ -110,6 +110,11 @@ UploadImage::upload($file, $contentName, $video = false);
 ```
 
 For example:
+Add to your controller 
+```
+use Dan\UploadImage\Exceptions\UploadImageException;
+```
+
 ```php
 $file = $request->file('image');
 
@@ -119,7 +124,7 @@ $video = $rubric->name == 'Video' ? true : false;
 try {
     // Upload and save image.
     $input['image'] = UploadImage::upload($file, 'post', $video)->getImageName();
-} catch (\Exception $e) {
+} catch (UploadImageException $e) {
 
     return back()->withInput()->withErrors(['image', $e->getMessage()]);
 }

@@ -8,9 +8,7 @@ namespace Dan\UploadImage;
 
 use Illuminate\Filesystem\Filesystem as File;
 use Spatie\Glide\GlideImage;
-use Dan\UploadImage\Exceptions\SourceFileNotImage;
-use Dan\UploadImage\Exceptions\SourceWidthNotCorrect;
-use Dan\UploadImage\Exceptions\SourceCanNotUpload;
+use Dan\UploadImage\Exceptions\UploadImageException;
 
 class UploadImage
 {
@@ -113,8 +111,8 @@ class UploadImage
      * @param $contentName string content name (use for create and named folder)
      * @param bool $video if true then add watermark with video player image to an image
      *
-     * @return string new image name
-     * @throws \Dan\UploadImage\Exceptions\SourceCanNotUpload
+     * @return object image
+     * @throws \Dan\UploadImage\Exceptions\UploadImageException
      */
     public function upload($file, $contentName, $video = false)
     {
@@ -137,7 +135,7 @@ class UploadImage
 
         // If file was uploaded then make resize and add watermark.
         if (!isset($newName)) {
-            throw new SourceCanNotUpload('Can\'t upload image!');
+            throw new UploadImageException('Can\'t upload image!');
         }
 
         // If video content then cover image the video player watermark.
@@ -178,8 +176,8 @@ class UploadImage
      * @param $contentName string content name (folder name for save)
      *
      * @return string path to file
-     * @throws \Dan\UploadImage\Exceptions\SourceFileNotImage
-     * @throws \Dan\UploadImage\Exceptions\SourceWidthNotCorrect
+     * @throws \Dan\UploadImage\Exceptions\UploadImageException
+     * @throws \Dan\UploadImage\Exceptions\UploadImageException
      */
     public function saveLinkImage($file, $contentName)
     {
@@ -191,16 +189,16 @@ class UploadImage
 
         // Check if image.
         if (!getimagesize($file)) {
-            throw new SourceFileNotImage('File should be image format!');
+            throw new UploadImageException('File should be image format!');
         }
 
         // If width image < $this->min_width (default 500px).
         if (getimagesize($file)[0] < $this->min_width) {
-            throw new SourceWidthNotCorrect('Image should be more then ' . $this->min_width . 'px');
+            throw new UploadImageException('Image should be more then ' . $this->min_width . 'px');
         }
 
         // Get extension file.
-        $ext = strtolower(last(explode('.', $file)));
+        $ext = pathinfo($file, PATHINFO_EXTENSION);
 
         // Generate new file name.
         $newName = $this->generateNewName($contentName, $ext);
@@ -311,7 +309,7 @@ class UploadImage
      *
      * @return string base64 file format
      */
-    public function convertToBase64($image_path_file)
+    public static function convertToBase64($image_path_file)
     {
         // Create Base64 image.
         $type = pathinfo($image_path_file, PATHINFO_EXTENSION);
@@ -380,8 +378,8 @@ class UploadImage
      * @param $contentName string Model name
      *
      * @return string path to file with name
-     * @throws \Dan\UploadImage\Exceptions\SourceFileNotImage
-     * @throws \Dan\UploadImage\Exceptions\SourceWidthNotCorrect
+     * @throws \Dan\UploadImage\Exceptions\UploadImageException
+     * @throws \Dan\UploadImage\Exceptions\UploadImageException
      */
     public function saveFileToDisk($file, $contentName)
     {
@@ -389,31 +387,31 @@ class UploadImage
         $imageStorage = $this->baseStore . $contentName . 's/';
         $imagePath = public_path() . $imageStorage;
 
-        if ($file->isValid()) {
-
-            // Get real path to file.
-            $pathToFile = $file->getPathname();
-
-            // Get image size.
-            $imageSize = getimagesize($pathToFile);
-
-            // If width image < $this->min_width (default 500px).
-            if ($imageSize[0] < $this->min_width) {
-                throw new SourceWidthNotCorrect('Image should be more then ' . $this->min_width . 'px');
-            }
-
-            // Get extension file.
-            $ext = strtolower($file->getClientOriginalExtension());
-
-            // Generate new file name.
-            $newName = $this->generateNewName($contentName, $ext);
-
-            // Save image to disk.
-            $file->move($imagePath . $this->original, $newName);
-
-            return $newName;
+        if (!$file->isValid()) {
+            throw new UploadImageException('File should be image format!');
         }
-        throw new SourceFileNotImage('File should be image format!');
+
+        // Get real path to file.
+        $pathToFile = $file->getPathname();
+
+        // Get image size.
+        $imageSize = getimagesize($pathToFile);
+
+        // If width image < $this->min_width (default 500px).
+        if ($imageSize[0] < $this->min_width) {
+            throw new UploadImageException('Image should be more then ' . $this->min_width . 'px');
+        }
+
+        // Get extension file.
+        $ext = $file->getClientOriginalExtension();
+
+        // Generate new file name.
+        $newName = $this->generateNewName($contentName, $ext);
+
+        // Save image to disk.
+        $file->move($imagePath . $this->original, $newName);
+
+        return $newName;
     }
 
     /**

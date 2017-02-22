@@ -11,17 +11,17 @@ class UploadImageGet
     /**
      * Image name.
      */
-    public $imageName;
+    protected $imageName;
 
     /**
      * Image URL.
      */
-    public $imageUrl;
+    protected $imageUrl;
 
     /**
      * Image path to disk.
      */
-    public $imagePath;
+    protected $imagePath;
 
     /**
      * UploadImageGet constructor.
