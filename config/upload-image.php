@@ -43,8 +43,5 @@ return [
 
         // Folder name for upload images from WYSIWYG editor.
         'editor_folder' => 'editor_post',
-
-        // Storage image which uploaded from WYSIWYG editor into the DB in the Base64 (default storage on the disk).
-        'base64_storage' => false
     ]
 ];

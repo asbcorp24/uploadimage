@@ -26,7 +26,7 @@ $(document).ready(function () {
                 success: function (settings) {
                     console.log(settings);
                     reader.onload = function (e) {
-                        var preview = '<img src="' + e.target.result + '" class="img-rounded"/>';
+                        var preview = '<img src="' + e.target.result + '" class="img-rounded" style="width: 100%"/>';
                         $('.image-preview-block .image-preview-image').empty().html(preview).css('width', settings.preview_width)
                     };
 

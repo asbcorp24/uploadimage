@@ -19,11 +19,6 @@ class UploadImageController extends Controller
     protected $editor_folder;
 
     /**
-     * Storage image which uploaded from WYSIWYG editor into the DB in the Base64 (default storage on the disk).
-     */
-    protected $base64_storage;
-
-    /**
      * Width for preview image.
      */
     protected $previewWidth;
@@ -34,8 +29,6 @@ class UploadImageController extends Controller
         $config = \Config::get('upload-image.image-settings');
 
         $this->editor_folder = $config['editor_folder'];
-        //$this->base64_storage = $config['base64_storage'];
-        $this->base64_storage = false;
         $this->previewWidth = $config['previewWidth'];
     }
 
@@ -46,97 +39,43 @@ class UploadImageController extends Controller
     {
         // Check exist file (files or link).
         if ($request->file('files') || $request->get('image')) {
+
             // If array with files.
             if ($request->file('files')) {
-                $file = Input::file('files');
-            } // If link to file.
-            elseif ($request->get('image')) {
+                $files = Input::file('files');
+            }
+
+            // If link to file.
+            if ($request->get('image')) {
                 // Get file from url.
-                $file = $request->get('image');
+                $files[] = $request->get('image');
             }
 
             // If file is array with many files.
-            if (is_array($file)) {
-                $files = $file;
-                unset($file);
+            if (is_array($files)) {
 
-                $image = [];
+                $images = [];
+                $errors = [];
 
                 // Get every file and upload it.
                 foreach ($files as $file) {
-                    // Upload and save image.
-                    $savedImage = UploadImage::upload($file, $this->editor_folder);
+                    try {
+                        // Upload and save image.
+                        $savedImage = UploadImage::upload($file, $this->editor_folder);
 
-                    // Get only image url.
-                    $image[] = $savedImage['url'];
+                        // Get only image url.
+                        $images[] = $savedImage->getImageUrl();
+
+                    } catch (\Exception $e) {
+                        $errors[] = $e->getMessage();
+                    }
                 }
 
-                // Some errors in form.
-                if (empty($image)) {
-                    $respond = [
-                        "error" => "Error, can't upload file! Please check file or URL."
-                    ];
-
-                    return response()->json($respond);
-                } else {
-                    $respond = [
-                        "url" => $image,
-                    ];
-                }
-
-                return response()->json($respond);
-            } // If file once file or link.
-            else {
-                // Upload and save image.
-                $image = UploadImage::upload($file, $this->editor_folder);
-
-                // Some errors in form.
-                if (empty($image)) {
-                    $respond = [
-                        "error" => "Error, can't upload file! Please check file or URL."
-                    ];
-
-                    return response()->json($respond);
-                }
-
-                // Get URL to file.
-                $image_path_name = $image['url'];
-
-                // Get path to file in file system.
-                $image_path_file = $image['file_path'];
-
-                // Get image name.
-                $image_name = $image['name'];
-
-                // Check status. If true then to convert file in base64 format.
-                if ($this->base64_storage) {
-                    // Convert image to base64 file.
-                    $image_path_name = UploadImage::convertToBase64($image_path_file);
-
-                    // Delete saved image (use if file need convert to base64 file).
-                    UploadImage::delete($image_name, $this->editor_folder);
-                }
-
-                if (!empty($image_name)) {
-                    $respond = [
-                        "uploaded" => 1,
-                        "fileName" => $image_name,
-                        "url" => $image_path_name,
-                    ];
-                } else {
-                    $respond = [
-                        "uploaded" => 0,
-                        "fileName" => $image_name,
-                        "url" => $image_path_name,
-                        "error" => [
-                            "message" => "Error, can't upload file!"
-                        ]
-                    ];
-                }
-
-                return response()->json($respond);
+                return response()->json(['url' => $images, 'error' => $errors]);
             }
         }
+
+        return response()->json(['status' => 500]);
     }
 
     /**
@@ -152,7 +91,7 @@ class UploadImageController extends Controller
             UploadImage::delete(last($image_name), $this->editor_folder);
         }
 
-        //return response()->json(['status' => 200]);
+        return response()->json(['status' => 200]);
     }
 
     /**
@@ -164,5 +103,7 @@ class UploadImageController extends Controller
         if ($request->get('preview')) {
             return response()->json(['preview_width' => $this->previewWidth]);
         }
+
+        return response()->json(['status' => 500]);
     }
 }

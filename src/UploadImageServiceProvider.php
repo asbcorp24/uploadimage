@@ -3,6 +3,7 @@
 namespace Dan\UploadImage;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Contracts\Container\Container;
 
 class UploadImageServiceProvider extends ServiceProvider
 {
@@ -34,8 +35,10 @@ class UploadImageServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__ . '/../config/upload-image.php', 'upload-image');
 
-        $this->app->bind('upload-image', function () {
-            return new UploadImage();
+        $this->app->bind('upload-image', function (Container $app) {
+            $config = $app['config']['upload-image']['image-settings'];
+
+            return new UploadImage($config);
         });
     }
 }

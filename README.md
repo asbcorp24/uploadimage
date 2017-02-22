@@ -1,4 +1,4 @@
-# UploadImage v1.0.2
+# UploadImage v1.0.3
 
 For Laravel 5.3 / 5.4
 
@@ -18,6 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
+ * v1.0.3 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
  * v1.0.2 - replace functional for show image preview in form,
             method upload return error with status if image width < image width in settings file
  * v1.0.1 - fix some bugs
@@ -111,14 +112,17 @@ For example:
 ```php
 $file = $request->file('image');
 
-if ($rubric->name == 'Video') {
-    $video = true;
-} else {
-    $video = false;
-}
+$video = $rubric->name == 'Video' ? true : false;
 
 // Upload and save image.
-$input['image'] = UploadImage::upload($file, 'post', $video)['name'];
+try {
+    // Upload and save image.
+    $input['image'] = UploadImage::upload($file, 'post', $video)->getImageName();
+} catch (\Exception $e) {
+
+    return back()->withInput()->withErrors(['image', $e->getMessage()]);
+}
+
 ```
 
 ### Delete your image from disk:
@@ -185,19 +189,16 @@ return view('posts.index', [
  *
  * @param $file object instance image
  * @param $contentName string content name (use for folder and name)
- * @param bool $real_width width for image preview
- * (if true - use real image width, if false (default) - use preview width from settings)
- * @param bool $watermark add watermark to image (by default - disable)
  *
  * @return array new image stream Base64
  */
-UploadImage::preview($file, $contentName, $real_width = false, $watermark = false);
+UploadImage::preview($file, $contentName);
 ```
 
 For example:
 ```php
 // Get image preview.
-$image_url = UploadImage::preview($file, 'collage_image', true)['url'];
+$image_url = UploadImage::preview($file, 'collage_image');
 ```
 
 ## You can use next routes:
@@ -234,22 +235,14 @@ function uploadFile(filesForm) {
         processData: false,
         success: function (images) {
 
-            // If not errors.
-            if (typeof images['error'] == 'undefined') {
+            // Get all images and insert to editor.
+            for (var i = 0; i < images['url'].length; i++) {
 
-                // Get all images and insert to editor.
-                for (var i = 0; i < images['url'].length; i++) {
-
-                    // Insert image into summernote.
-                    editor.summernote('insertImage', images['url'][i], function ($image) {
-                        //$image.css('width', $image.width() / 3);
-                        //$image.attr('data-filename', 'retriever')
-                    });
-                }
-            }
-            else {
-                var error = 'Error, can\'t upload file! Please check file or URL. Image should be more then 500px!';
-                alert(error);
+                // Insert image into summernote.
+                editor.summernote('insertImage', images['url'][i], function ($image) {
+                    //$image.css('width', $image.width() / 3);
+                    //$image.attr('data-filename', 'retriever')
+                });
             }
         }
     });

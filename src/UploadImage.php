@@ -6,8 +6,11 @@
 
 namespace Dan\UploadImage;
 
-use File;
-use GlideImage;
+use Illuminate\Filesystem\Filesystem as File;
+use Spatie\Glide\GlideImage;
+use Dan\UploadImage\Exceptions\SourceFileNotImage;
+use Dan\UploadImage\Exceptions\SourceWidthNotCorrect;
+use Dan\UploadImage\Exceptions\SourceCanNotUpload;
 
 class UploadImage
 {
@@ -77,12 +80,15 @@ class UploadImage
     protected $editor_folder;
 
     /**
+     * Object for work with files.
+     */
+    public $file;
+
+    /**
      *  Get settings from config file.
      */
-    public function __construct()
+    public function __construct($config)
     {
-        $config = \Config::get('upload-image.image-settings');
-
         $this->thumbnail_status = $config['thumbnail_status'];
         $this->baseStore = $config['baseStore'];
         $this->original = $config['original'];
@@ -96,6 +102,8 @@ class UploadImage
         $this->min_width = $config['min_width'];
         $this->previewWidth = $config['previewWidth'];
         $this->editor_folder = $config['editor_folder'];
+
+        $this->file = new File();
     }
 
     /**
@@ -106,6 +114,7 @@ class UploadImage
      * @param bool $video if true then add watermark with video player image to an image
      *
      * @return string new image name
+     * @throws \Dan\UploadImage\Exceptions\SourceCanNotUpload
      */
     public function upload($file, $contentName, $video = false)
     {
@@ -113,130 +122,51 @@ class UploadImage
 
         // Create path for storage and full path to image.
         $imageStorage = $this->baseStore . $contentName . 's/';
+        // Path to file system.
         $imagePath = public_path() . $imageStorage;
-
-        $newName = '';
-        $newImage = '';
 
         // If file URL string.
         if (is_string($file) && !empty($file)) {
-            // Path to file in file system.
-            $originalPath = $this->saveLinkImage($file, $contentName);
+            $newName = $this->saveLinkImage($file, $contentName);
+        }
 
-        } // If file from form.
-        elseif (is_object($file)) {
-            if ($file->isValid()) {
-                // File name.
-                //$imageName = $file->getClientOriginalName();
-
-                // Get extension file.
-                $ext = strtolower($file->getClientOriginalExtension());
-
-                // Get real path to file.
-                $pathToFile = $file->getPathname();
-
-                // Get image size.
-                $imageSize = getimagesize($pathToFile);
-
-                // If width image < $this->min_width (default 500px).
-                if ($imageSize[0] < $this->min_width) {
-                    return ['error' => 'Image should be more then ' . $imageSize[0] . 'px'];
-                }
-
-                $ind = time() . '_' . mb_strtolower(str_random(8));
-
-                // New file name.
-                $newName = $contentName . '_' . $ind . '.' . $ext;
-
-                // Save image to disk.
-                $file->move($imagePath . $this->original, $newName);
-
-                // Path to file in file system.
-                $originalPath = $imagePath . $this->original . $newName;
-            }
+        // If file from form. Save file to disk.
+        if (is_object($file)) {
+            $newName = $this->saveFileToDisk($file, $contentName);
         }
 
         // If file was uploaded then make resize and add watermark.
-        if (isset($originalPath)) {
-            // Get image width.
-            $image_width = getimagesize($originalPath)[0];
-
-            // If video content then cover image the video player watermark.
-            if ($video) {
-                $watermark = $this->watermark_video_path;
-                $markPos = 'center';
-                $markPad = 0;
-
-                // Create array with watermark data.
-                $watermark_array = [
-                    'mark' => public_path() . $watermark,
-                    'markpad' => $markPad,
-                    'markpos' => $markPos
-                ];
-            } else {
-                if ($this->watermark_status) {
-                    $watermark = $this->watermark_path;
-                    $markPos = 'bottom-right';
-                    $markPad = 5;
-
-                    // Create array with watermark data.
-                    $watermark_array = [
-                        'mark' => public_path() . $watermark,
-                        'markpad' => $markPad,
-                        'markpos' => $markPos
-                    ];
-                } else {
-                    // Create empty array.
-                    $watermark_array = [];
-                }
-            }
-
-            // If image width more then originalResize - make resize it.
-            if ($image_width > $this->originalResize) {
-                // Resize saved image and save to original folder
-                // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
-                GlideImage::create($originalPath)
-                    ->modify(array_merge([
-                        'w' => $this->originalResize,
-                        'q' => $this->quality
-                    ], $watermark_array))
-                    ->save($originalPath);
-            } // Add only watermark and change quality for image.
-            else {
-                GlideImage::create($originalPath)
-                    ->modify(array_merge([
-                        'q' => $this->quality,
-                    ], $watermark_array))
-                    ->save($originalPath);
-            }
-
-            // If need make thumbnails.
-            if ($thumbnails) {
-                // Get all thumbnails and save it.
-                foreach ($this->thumbnails as $width) {
-                    // Path to folder where will be save image.
-                    $savedImagePath = $imagePath . 'w' . $width . '/';
-
-                    // File with path to save image.
-                    $savedImagePathFile = $savedImagePath . $newName;
-
-                    // Create new folder.
-                    File::makeDirectory($savedImagePath, $mode = 0755, true, true);
-
-                    // Resize saved image and save to thumbnail folder
-                    // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
-                    GlideImage::create($originalPath)
-                        ->modify(['w' => $width])
-                        ->save($savedImagePathFile);
-                }
-            }
-
-            $newImage = [
-                'name' => $newName,
-                'url' => $imageStorage . $this->original . $newName,
-                'file_path' => $originalPath
-            ];
+        if (!isset($newName)) {
+            throw new SourceCanNotUpload('Can\'t upload image!');
         }
+
+        // If video content then cover image the video player watermark.
+        $watermark_array = $this->createWatermarkArray($video);
+
+        // Path to file in file system.
+        $originalPath = $imagePath . $this->original . $newName;
+
+        // Get image width.
+        $image_width = getimagesize($originalPath)[0];
+
+        // If image width more then originalResize - make resize it.
+        if ($image_width > $this->originalResize) {
+            // Add resize attribute.
+            $watermark_array['w'] = $this->originalResize;
+        }
+
+        $this->resizeImageAddWatermark($originalPath, $watermark_array);
+
+        // If need make thumbnails.
+        if ($thumbnails) {
+            // Create thumbnails.
+            $this->createThumbnails($imagePath, $originalPath, $newName);
+        }
+
+        // Url to image.
+        $url = $imageStorage . $this->original . $newName;
+
+        $newImage = new UploadImageGet($newName, $url, $originalPath);
 
         return $newImage;
     }
@@ -248,6 +178,8 @@ class UploadImage
      * @param $contentName string content name (folder name for save)
      *
      * @return string path to file
+     * @throws \Dan\UploadImage\Exceptions\SourceFileNotImage
+     * @throws \Dan\UploadImage\Exceptions\SourceWidthNotCorrect
      */
     public function saveLinkImage($file, $contentName)
     {
@@ -257,30 +189,27 @@ class UploadImage
 
         $file = trim($file);
 
-        // Check image.
+        // Check if image.
         if (!getimagesize($file)) {
-            // If not image
-            return '';
+            throw new SourceFileNotImage('File should be image format!');
         }
 
-        // If width image < 500px.
+        // If width image < $this->min_width (default 500px).
         if (getimagesize($file)[0] < $this->min_width) {
-            return '';
+            throw new SourceWidthNotCorrect('Image should be more then ' . $this->min_width . 'px');
         }
 
         // Get extension file.
         $ext = strtolower(last(explode('.', $file)));
 
-        // Get file from URL.
-        $file = curl_init($file);
-
-        $ind = time() . '_' . mb_strtolower(str_random(8));
-
-        // New file name.
-        $newName = $contentName . '_' . $ind . '.' . $ext;
+        // Generate new file name.
+        $newName = $this->generateNewName($contentName, $ext);
 
         // Path to file in file system.
         $originalPath = $imagePath . $this->original . $newName;
+
+        // Get file from URL.
+        $file = curl_init($file);
 
         // Save file to disk.
         $fp = fopen($originalPath, 'wb');
@@ -291,7 +220,7 @@ class UploadImage
         curl_close($file);
         fclose($fp);
 
-        return $originalPath;
+        return $newName;
     }
 
     /**
@@ -305,48 +234,26 @@ class UploadImage
     {
         $thumbnails = $this->thumbnail_status;
 
-        // Delete old image if exist.
+        // Create path for storage and full path to image.
+        $imageStorage = $this->baseStore . $contentName . 's/';
+        $imagePath = public_path() . $imageStorage;
+
+        // Make array for once image.
         if (is_string($imageName)) {
-            // Get file name.
-            $oldFileName = $imageName;
+            $imageName = [$imageName];
+        }
 
-            // Create path for storage and full path to image.
-            $imageStorage = $this->baseStore . $contentName . 's/';
-            $imagePath = public_path() . $imageStorage;
-
-            // Delete old original image from disk.
-            File::delete($imagePath . $this->original . $oldFileName);
-
-            // Delete all thumbnails if exist.
-            if ($thumbnails) {
-                // Get all thumbnails and delete it.
-                foreach ($this->thumbnails as $width) {
-                    // Delete old image from disk.
-                    File::delete($imagePath . 'w' . $width . '/' . $oldFileName);
-                }
-            }
-        } elseif (is_array($imageName)) {
-            // If need delete array images.
+        // If need delete array of images.
+        if (is_array($imageName)) {
 
             // Delete each image.
             foreach ($imageName as $image) {
-                // Get file name.
-                $oldFileName = $image;
-
-                // Create path for storage and full path to image.
-                $imageStorage = $this->baseStore . $contentName . 's/';
-                $imagePath = public_path() . $imageStorage;
-
                 // Delete old original image from disk.
-                File::delete($imagePath . $this->original . $oldFileName);
+                $this->file->delete($imagePath . $this->original . $image);
 
                 // Delete all thumbnails if exist.
                 if ($thumbnails) {
-                    // Get all thumbnails and delete it.
-                    foreach ($this->thumbnails as $width) {
-                        // Delete old image from disk.
-                        File::delete($imagePath . 'w' . $width . '/' . $oldFileName);
-                    }
+                    $this->deleteThumbnails($imagePath, $image);
                 }
             }
         }
@@ -379,6 +286,9 @@ class UploadImage
      */
     public function load($contentName, $size = null)
     {
+        // Create path to original image.
+        $imagePath = $this->baseStore . $contentName . 's/' . $this->original;
+
         // If get size for image.
         if ($size) {
             // Get all thumbnails and compare with size.
@@ -389,19 +299,15 @@ class UploadImage
                     return $imagePath;
                 }
             }
-        } else {
-            $imagePath = $this->baseStore . $contentName . 's/' . $this->original;
-
-            return $imagePath;
         }
 
-        return '';
+        return $imagePath;
     }
 
     /**
      * Convert image to base64 format.
      *
-     * @param $image_path_file string path to file in file system
+     * @param $image_path_file string path to file in a file system
      *
      * @return string base64 file format
      */
@@ -420,115 +326,21 @@ class UploadImage
      *
      * @param $file object instance image
      * @param $contentName string content name (use for folder and name)
-     * @param bool $real_width width for image preview
-     * (if true - use real image width, if false (default) - use preview width from settings)
-     * @param bool $watermark add watermark to image (by default - disable)
      *
-     * @return array new image stream Base64
+     * @return string new image stream Base64
      */
-    public function preview($file, $contentName, $real_width = false, $watermark = false)
+    public function preview($file, $contentName)
     {
-        // Create path for storage and full path to image.
-        $imageStorage = $this->baseStore . $contentName . 's/';
-        $imagePath = public_path() . $imageStorage;
+        // Upload image and get path to file.
+        $originalPath = $this->upload($file, $contentName)->getImagePath();
 
-        $newName = ['error' => 'File not valid!'];
+        // Convert image to base64 file.
+        $image_path_name = UploadImage::convertToBase64($originalPath);
 
-        // If file URL string.
-        if (is_string($file) && !empty($file)) {
-            // Path to file in file system.
-            $originalPath = $this->saveLinkImage($file, $contentName);
+        // Delete original image from disk.
+        $this->file->delete($originalPath);
 
-            // Get image size.
-            $imageSize = getimagesize($originalPath);
-
-        } // If file from form.
-        elseif (is_object($file)) {
-            if ($file->isValid()) {
-                // File name.
-                //$imageName = $file->getClientOriginalName();
-
-                // Get extension file.
-                $ext = strtolower($file->getClientOriginalExtension());
-
-                // Get real path to file.
-                $pathToFile = $file->getPathname();
-
-                // Get image size.
-                $imageSize = getimagesize($pathToFile);
-
-                // If not image.
-                if (!$imageSize) {
-                    return ['error' => 'Not image file!'];
-                }
-
-                // If width image < $this->min_width (default 500px).
-                if ($imageSize[0] < $this->min_width) {
-                    return ['error' => 'Image must be more then ' . $this->min_width . 'px!'];
-                }
-
-                $ind = time() . '_' . mb_strtolower(str_random(8));
-
-                // New file name.
-                $newName = $contentName . '_' . $ind . '.' . $ext;
-
-                // Save image to disk.
-                $file->move($imagePath . $this->original, $newName);
-
-                // Path to file in file system.
-                $originalPath = $imagePath . $this->original . $newName;
-
-            }
-        }
-
-        // If file was uploaded.
-        if (isset($originalPath) && !empty($originalPath)) {
-            // If real width = true.
-            if ($real_width) {
-                $previewWidth = $imageSize[0] > $this->originalResize ? $this->originalResize : $imageSize[0];
-            } else {
-                $previewWidth = $this->previewWidth;
-            }
-
-            // Check nisessary in a watermark cover.
-            if ($watermark) {
-                // Resize saved image and save
-                // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
-                GlideImage::create($originalPath)
-                    ->modify([
-                        'w' => $previewWidth,
-                        'q' => $this->quality,
-                        'mark' => public_path() . $this->watermark_path,
-                        'markpad' => 5
-                    ])
-                    ->save($originalPath);
-            } else {
-                // Resize saved image and save
-                // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
-                GlideImage::create($originalPath)
-                    ->modify([
-                        'w' => $previewWidth,
-                        'q' => $this->quality,
-                    ])
-                    ->save($originalPath);
-            }
-
-            // Get new image size.
-            $imageNewSize = getimagesize($originalPath);
-
-            // Convert image to base64 file.
-            $image_path_name = UploadImage::convertToBase64($originalPath);
-
-            // Delete original image from disk.
-            File::delete($originalPath);
-
-            $newName = [
-                'url' => $image_path_name,
-                'size' => $imageNewSize
-            ];
-        }
-
-        return $newName;
+        return $image_path_name;
     }
 
     /**
@@ -549,14 +361,175 @@ class UploadImage
         $body_images = [];
 
         foreach ($get_body_images as $body_image) {
+
+            $src = $body_image->getAttribute('src');
+
             // If this is internal link.
-            if (mb_strpos($body_image->getAttribute('src'), 'http://') === false &&
-                mb_strpos($body_image->getAttribute('src'), 'https://') === false
-            ) {
-                $body_images[] = last(explode('/', $body_image->getAttribute('src')));
+            if (mb_strpos($src, 'http://') === false && mb_strpos($src, 'https://') === false) {
+                $body_images[] = last(explode('/', $src));
             }
         }
 
         return $body_images;
+    }
+
+    /**
+     * Save file to disk.
+     *
+     * @param $file object file from input form
+     * @param $contentName string Model name
+     *
+     * @return string path to file with name
+     * @throws \Dan\UploadImage\Exceptions\SourceFileNotImage
+     * @throws \Dan\UploadImage\Exceptions\SourceWidthNotCorrect
+     */
+    public function saveFileToDisk($file, $contentName)
+    {
+        // Create path for storage and full path to image.
+        $imageStorage = $this->baseStore . $contentName . 's/';
+        $imagePath = public_path() . $imageStorage;
+
+        if ($file->isValid()) {
+
+            // Get real path to file.
+            $pathToFile = $file->getPathname();
+
+            // Get image size.
+            $imageSize = getimagesize($pathToFile);
+
+            // If width image < $this->min_width (default 500px).
+            if ($imageSize[0] < $this->min_width) {
+                throw new SourceWidthNotCorrect('Image should be more then ' . $this->min_width . 'px');
+            }
+
+            // Get extension file.
+            $ext = strtolower($file->getClientOriginalExtension());
+
+            // Generate new file name.
+            $newName = $this->generateNewName($contentName, $ext);
+
+            // Save image to disk.
+            $file->move($imagePath . $this->original, $newName);
+
+            return $newName;
+        }
+        throw new SourceFileNotImage('File should be image format!');
+    }
+
+    /**
+     * Generate new name for image.
+     *
+     * @param $contentName string Model name
+     * @param $ext string extension of image file
+     *
+     * @return string
+     */
+    public function generateNewName($contentName, $ext)
+    {
+        $ind = time() . '_' . mb_strtolower(str_random(8));
+
+        // New file name.
+        $newName = $contentName . '_' . $ind . '.' . $ext;
+
+        return $newName;
+    }
+
+    /**
+     * Prepare array for create watermark
+     *
+     * @param $video bool status for video player image
+     *
+     * @return array with watermark data
+     */
+    public function createWatermarkArray($video)
+    {
+        // Create empty array.
+        $watermark_array = [];
+
+        // If video content then cover image the video player watermark.
+        if ($video) {
+
+            // Create array with watermark data.
+            $watermark_array = [
+                'mark' => public_path() . $this->watermark_video_path,
+                'markpad' => 'center',
+                'markpos' => 0
+            ];
+        }
+
+        // If not video content and need add watermark.
+        if (!$video && $this->watermark_status) {
+
+            // Create array with watermark data.
+            $watermark_array = [
+                'mark' => public_path() . $this->watermark_path,
+                'markpad' => 'bottom-right',
+                'markpos' => 5
+            ];
+        }
+
+        return $watermark_array;
+    }
+
+    /**
+     * Resize image, change quality and add watermark
+     *
+     * @param $originalPath string path to image on the disk
+     * @param $watermark_array array with attributes
+     */
+    public function resizeImageAddWatermark($originalPath, $watermark_array)
+    {
+        // Resize saved image and save to original folder
+        // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
+        GlideImage::create($originalPath)
+            ->modify(array_merge([
+                'w' => $this->originalResize,
+                'q' => $this->quality
+            ], $watermark_array))
+            ->save($originalPath);
+    }
+
+    /**
+     * Create thumbnails.
+     *
+     * @param $imagePath string path to image folder
+     * @param $originalPath string path to image folder with file name
+     * @param $newName string image name
+     */
+    public function createThumbnails($imagePath, $originalPath, $newName)
+    {
+        // Get all thumbnails and save it.
+        foreach ($this->thumbnails as $width) {
+            // Path to folder where will be save image.
+            $savedImagePath = $imagePath . 'w' . $width . '/';
+
+            // File with path to save image.
+            $savedImagePathFile = $savedImagePath . $newName;
+
+            // Create new folder.
+            $this->file->makeDirectory($savedImagePath, $mode = 0755, true, true);
+
+            // Resize saved image and save to thumbnail folder
+            // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
+            GlideImage::create($originalPath)
+                ->modify(['w' => $width])
+                ->save($savedImagePathFile);
+        }
+
+    }
+
+    /**
+     * Delete Thumbnails from disk.
+     *
+     * @param $imagePath string path to image on the disk
+     * @param $imageName string image name
+     */
+    public function deleteThumbnails($imagePath, $imageName)
+    {
+        // Get all thumbnails and delete it.
+        foreach ($this->thumbnails as $width) {
+            // Delete old image from disk.
+            $this->file->delete($imagePath . 'w' . $width . '/' . $imageName);
+        }
     }
 }
