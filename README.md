@@ -1,4 +1,4 @@
-# UploadImage v1.0.3
+# UploadImage v1.0.4
 
 For Laravel 5.3 / 5.4
 
@@ -18,7 +18,8 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
- * v1.0.3 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
+ * v1.0.4 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
+ * v1.0.3 - Fix some bugs.
  * v1.0.2 - replace functional for show image preview in form,
             method upload return error with status if image width < image width in settings file
  * v1.0.1 - fix some bugs
