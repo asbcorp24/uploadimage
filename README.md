@@ -1,4 +1,4 @@
-# UploadImage v1.0.5
+# UploadImage v1.0.50
 
 For Laravel 5.3 / 5.4
 
@@ -18,6 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
+ * v1.0.50 - Yo can disable or enable watermark. 
  * v1.0.5 - Fix check file on image. 
  * v1.0.4 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
  * v1.0.3 - Fix some bugs.
@@ -104,10 +105,11 @@ If you want see preview image after selected image in the file input field then 
  *
  * @param $file object instance image or image string
  * @param $contentName string content name (use for create and named folder)
+ * @param $watermark bool status for watermark (by default = false)
  * @param bool $video if true then add watermark with video player image to an image
  *
  * @return string new image name
-UploadImage::upload($file, $contentName, $video = false);
+UploadImage::upload($file, $contentName, $watermark = false, $video = false);
 ```
 
 For example:
@@ -120,11 +122,12 @@ use Dan\UploadImage\Exceptions\UploadImageException;
 $file = $request->file('image');
 
 $video = $rubric->name == 'Video' ? true : false;
+$warermark = false;
 
 // Upload and save image.
 try {
     // Upload and save image.
-    $input['image'] = UploadImage::upload($file, 'post', $video)->getImageName();
+    $input['image'] = UploadImage::upload($file, 'post', $watermark, $video)->getImageName();
 } catch (UploadImageException $e) {
 
     return back()->withInput()->withErrors(['image', $e->getMessage()]);

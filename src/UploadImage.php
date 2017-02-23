@@ -43,11 +43,6 @@ class UploadImage
     protected $thumbnails;
 
     /**
-     * Watermark image status (default disable).
-     */
-    protected $watermark_status;
-
-    /**
      * Watermark image.
      */
     protected $watermark_path;
@@ -93,7 +88,6 @@ class UploadImage
         $this->originalResize = $config['originalResize'];
         $this->quality = $config['quality'];
         $this->thumbnails = $config['thumbnails'];
-        $this->watermark_status = $config['watermark_status'];
         $this->watermark_path = $config['watermark_path'];
         $this->watermark_video_path = $config['watermark_video_path'];
         $this->watermark_text = $config['watermark_text'];
@@ -109,12 +103,13 @@ class UploadImage
      *
      * @param $file object instance image or image string
      * @param $contentName string content name (use for create and named folder)
+     * @param bool $watermark bool watermark status (by default = false)
      * @param bool $video if true then add watermark with video player image to an image
      *
      * @return object image
      * @throws \Dan\UploadImage\Exceptions\UploadImageException
      */
-    public function upload($file, $contentName, $video = false)
+    public function upload($file, $contentName, $watermark = false, $video = false)
     {
         $thumbnails = $this->thumbnail_status;
 
@@ -139,7 +134,7 @@ class UploadImage
         }
 
         // If video content then cover image the video player watermark.
-        $watermark_array = $this->createWatermarkArray($video);
+        $watermark_array = $this->createWatermarkArray($watermark, $video);
 
         // Path to file in file system.
         $originalPath = $imagePath . $this->original . $newName;
@@ -243,7 +238,6 @@ class UploadImage
 
         // If need delete array of images.
         if (is_array($imageName)) {
-
             // Delete each image.
             foreach ($imageName as $image) {
                 // Delete old original image from disk.
@@ -359,7 +353,6 @@ class UploadImage
         $body_images = [];
 
         foreach ($get_body_images as $body_image) {
-
             $src = $body_image->getAttribute('src');
 
             // If this is internal link.
@@ -436,34 +429,33 @@ class UploadImage
     /**
      * Prepare array for create watermark
      *
+     * @param $watermark bool status watermark
      * @param $video bool status for video player image
      *
      * @return array with watermark data
      */
-    public function createWatermarkArray($video)
+    public function createWatermarkArray($watermark, $video)
     {
         // Create empty array.
         $watermark_array = [];
 
         // If video content then cover image the video player watermark.
         if ($video) {
-
             // Create array with watermark data.
             $watermark_array = [
                 'mark' => public_path() . $this->watermark_video_path,
-                'markpad' => 'center',
-                'markpos' => 0
+                'markpad' => 0,
+                'markpos' => 'center'
             ];
         }
 
         // If not video content and need add watermark.
-        if (!$video && $this->watermark_status) {
-
+        if (!$video && $watermark) {
             // Create array with watermark data.
             $watermark_array = [
                 'mark' => public_path() . $this->watermark_path,
-                'markpad' => 'bottom-right',
-                'markpos' => 5
+                'markpad' => 5,
+                'markpos' => 'bottom-right'
             ];
         }
 
@@ -514,7 +506,6 @@ class UploadImage
                 ->modify(['w' => $width])
                 ->save($savedImagePathFile);
         }
-
     }
 
     /**

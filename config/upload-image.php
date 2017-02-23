@@ -23,9 +23,6 @@ return [
         // Array with width thumbnails for images.
         'thumbnails' => ['200', '400'],
 
-        // Watermark image status (default disable).
-        'watermark_status' => false,
-
         // Watermark image.
         'watermark_path' => '/images/design/watermark.png',
 
