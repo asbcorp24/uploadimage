@@ -387,7 +387,8 @@ class UploadImage
         $imageStorage = $this->baseStore . $contentName . 's/';
         $imagePath = public_path() . $imageStorage;
 
-        if (!$file->isValid()) {
+        // Check if image.
+        if (!getimagesize($file)) {
             throw new UploadImageException('File should be image format!');
         }
 
