@@ -18,7 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
- * v1.0.50 - Yo can disable or enable watermark. 
+ * v1.0.50 - You can disable or enable watermark. See example below.
  * v1.0.5 - Fix check file on image. 
  * v1.0.4 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
  * v1.0.3 - Fix some bugs.
@@ -122,7 +122,7 @@ use Dan\UploadImage\Exceptions\UploadImageException;
 $file = $request->file('image');
 
 $video = $rubric->name == 'Video' ? true : false;
-$warermark = false;
+$warermark = true;
 
 // Upload and save image.
 try {
