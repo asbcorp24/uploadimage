@@ -181,9 +181,10 @@ class UploadImage
         $imagePath = public_path() . $imageStorage;
 
         $file = trim($file);
+        $imageSize = getimagesize($file);
 
         // Check if image.
-        if (!getimagesize($file)) {
+        if (!$imageSize) {
             throw new UploadImageException('File should be image format!');
         }
 
@@ -192,8 +193,8 @@ class UploadImage
             throw new UploadImageException('Image should be more then ' . $this->min_width . 'px');
         }
 
-        // Get extension file.
-        $ext = pathinfo($file, PATHINFO_EXTENSION);
+        // Get real image extension.
+        $ext = explode('/', $imageSize['mime'])[1];
 
         // Generate new file name.
         $newName = $this->generateNewName($contentName, $ext);
@@ -396,8 +397,8 @@ class UploadImage
             throw new UploadImageException('Image should be more then ' . $this->min_width . 'px');
         }
 
-        // Get extension file.
-        $ext = $file->getClientOriginalExtension();
+        // Get real image extension.
+        $ext = explode('/', $imageSize['mime'])[1];
 
         // Generate new file name.
         $newName = $this->generateNewName($contentName, $ext);
