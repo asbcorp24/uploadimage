@@ -1,4 +1,4 @@
-# UploadImage v1.0.60
+# UploadImage v1.0.61
 
 For Laravel 5.3 / 5.4
 
@@ -18,7 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
- * v1.0.60 - Get real image extension.
+ * v1.0.61 - Get real image extension.
  * v1.0.50 - You can disable or enable watermark. See example below.
  * v1.0.5 - Fix check file on image. 
  * v1.0.4 - Refactoring all code. Add exceptions, change arrays to methods. Fix some bugs. 
