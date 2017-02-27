@@ -116,6 +116,7 @@ UploadImage::upload($file, $contentName, $watermark = false, $video = false);
 For example:
 Add to your controller 
 ```
+use UploadImage;
 use Dan\UploadImage\Exceptions\UploadImageException;
 ```
 
