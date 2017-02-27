@@ -23,6 +23,11 @@ class UploadImageController extends Controller
      */
     protected $previewWidth;
 
+    /**
+     * Watermark image status for WYSIWYG editor (default disable).
+     */
+    protected $watermarkEditorStatus;
+
     // Get settings from config file.
     public function __construct()
     {
@@ -30,6 +35,7 @@ class UploadImageController extends Controller
 
         $this->editor_folder = $config['editor_folder'];
         $this->previewWidth = $config['previewWidth'];
+        $this->watermarkEditorStatus = $config['watermarkEditorStatus'];
     }
 
     /**
@@ -65,7 +71,7 @@ class UploadImageController extends Controller
         foreach ($files as $file) {
             try {
                 // Upload and save image.
-                $savedImage = UploadImage::upload($file, $this->editor_folder);
+                $savedImage = UploadImage::upload($file, $this->editor_folder, $this->watermarkEditorStatus);
 
                 // Get only image url.
                 $images[] = $savedImage->getImageUrl();

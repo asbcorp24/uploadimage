@@ -23,6 +23,9 @@ return [
         // Array with width thumbnails for images.
         'thumbnails' => ['200', '400'],
 
+        // Watermark image status for WYSIWYG editor (default disable).
+        'watermarkEditorStatus' => false,
+
         // Watermark image.
         'watermark_path' => '/images/design/watermark.png',
 
