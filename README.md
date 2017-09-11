@@ -1,6 +1,6 @@
-# UploadImage v1.0.70
+# UploadImage v2.0
 
-For Laravel 5.3 / 5.4
+For Laravel 5.3 / 5.4 / 5.5
 
 * [Demo](https://yousuper.org/)
 * [Site author](https://cleverman.org/)
@@ -18,6 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
+ * v2.0 -    Support Laravel 5.5
  * v1.0.70 - Add to config 'watermarkEditorStatus' for WYSIWYG editors. Change UploadImageController
  * v1.0.61 - Get real image extension.
  * v1.0.50 - You can disable or enable watermark. See example below.
@@ -37,7 +38,7 @@ This package give you next opportunities:
 
 ### Add package to your project:
 ```
-composer require kirill-dan/uploadimage 1.*
+composer require kirill-dan/uploadimage 2.*
 ```
 
 ### Add to file config/app.php next entries:
@@ -71,18 +72,17 @@ config/upload-image.php - this is settings for UploadImage package
 
 resources/assets/js/upload_image_preview.js - you should include this file to elixir:
 
-Open file gulpfile.js and add upload_image_preview.js to the array. For example:
+Open file webpack.mix.js and add upload_image_preview.js to the array. For example:
 ```php
-elixir(function (mix) {
-    mix.sass(['app.scss'])
-        .scripts(['app.js', 'upload_image_preview.js']);
+mix.sass('resources/assets/sass/app.scss', 'public/css/app.css').version();
 
-});
+mix.js(['resources/assets/js/app.js', 'resources/assets/js/upload_image_preview.js'],
+    'public/js/all.js').version();
 ```
 
 After execute command in terminal (for production): 
 ```
-gulp --production
+npn run production
 ```
 
 For Controller where you want use UploadImage add namespace Facade:
