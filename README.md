@@ -18,6 +18,7 @@ This package give you next opportunities:
  * You can storing your images on the disk or in the DB in the Base64 format
  
  ## History:
+ * v2.0.1 -  Thumbnails can assign in method: upload($file, $contentName, $watermark = false, $video = false, $thumbnails = false)
  * v2.0 -    Support Laravel 5.5
  * v1.0.70 - Add to config 'watermarkEditorStatus' for WYSIWYG editors. Change UploadImageController
  * v1.0.61 - Get real image extension.

@@ -105,13 +105,14 @@ class UploadImage
      * @param $contentName string content name (use for create and named folder)
      * @param bool $watermark bool watermark status (by default = false)
      * @param bool $video if true then add watermark with video player image to an image
+     * @param bool $thumbnails create thumbnails for original image
      *
      * @return object image
-     * @throws \Dan\UploadImage\Exceptions\UploadImageException
+     * @throws UploadImageException
      */
-    public function upload($file, $contentName, $watermark = false, $video = false)
+    public function upload($file, $contentName, $watermark = false, $video = false, $thumbnails = false)
     {
-        $thumbnails = $this->thumbnail_status;
+        //$thumbnails = $this->thumbnail_status;
 
         // Create path for storage and full path to image.
         $imageStorage = $this->baseStore . $contentName . 's/';
