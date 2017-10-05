@@ -71,7 +71,7 @@ Will be copied two files:
 
 config/upload-image.php - this is settings for UploadImage package
 
-resources/assets/js/upload_image_preview.js - you should include this file to elixir:
+resources/assets/js/upload_image_preview.js - you should include this file to elixir/mix:
 
 Open file webpack.mix.js and add upload_image_preview.js to the array. For example:
 ```php
@@ -107,6 +107,7 @@ If you want see preview image after selected image in the file input field then 
  * Upload image to disk.
  *
  * @param $file object instance image or image string
+ * @param $contentName string content name (use for create and named folder)
  * @param $contentName string content name (use for create and named folder)
  * @param $watermark bool status for watermark (by default = false)
  * @param bool $video if true then add watermark with video player image to an image
