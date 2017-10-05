@@ -108,12 +108,14 @@ If you want see preview image after selected image in the file input field then 
  *
  * @param $file object instance image or image string
  * @param $contentName string content name (use for create and named folder)
- * @param $contentName string content name (use for create and named folder)
- * @param $watermark bool status for watermark (by default = false)
+ * @param bool $watermark bool watermark status (by default = false)
  * @param bool $video if true then add watermark with video player image to an image
+ * @param bool $thumbnails create thumbnails for original image
  *
- * @return string new image name
-UploadImage::upload($file, $contentName, $watermark = false, $video = false);
+ * @return object image
+ * @throws UploadImageException
+ */
+UploadImage::upload($file, $contentName, $watermark = false, $video = false, $thumbnails = false)
 ```
 
 For example:
@@ -127,12 +129,13 @@ use Dan\UploadImage\Exceptions\UploadImageException;
 $file = $request->file('image');
 
 $video = $rubric->name == 'Video' ? true : false;
-$warermark = true;
+$watermark = true;
+$thumbnail = true;
 
 // Upload and save image.
 try {
     // Upload and save image.
-    $input['image'] = UploadImage::upload($file, 'post', $watermark, $video)->getImageName();
+    $input['image'] = UploadImage::upload($file, 'post', $watermark, $video, $thumbnail)->getImageName();
 } catch (UploadImageException $e) {
 
     return back()->withInput()->withErrors(['image', $e->getMessage()]);
