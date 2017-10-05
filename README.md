@@ -101,7 +101,7 @@ If you want see preview image after selected image in the file input field then 
 
 ## You can use next methods:
 
-###Upload you image to disk from file form:
+**Upload you image to disk from file form:**
 ```php
 /**
  * Upload image to disk.
