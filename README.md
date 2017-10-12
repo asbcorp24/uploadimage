@@ -83,7 +83,7 @@ mix.js(['resources/assets/js/app.js', 'resources/assets/js/upload_image_preview.
 
 After execute command in terminal (for production): 
 ```
-npn run production
+npm run production
 ```
 
 For Controller where you want use UploadImage add namespace Facade:
