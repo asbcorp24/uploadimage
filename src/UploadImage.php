@@ -110,7 +110,7 @@ class UploadImage
      * @return object image
      * @throws UploadImageException
      */
-    public function upload($file, $contentName, $watermark = false, $video = false, $thumbnails = false)
+    public function upload($file, $contentName, $watermark = false, $video = false, $thumbnails = false, $size = false)
     {
         //$thumbnails = $this->thumbnail_status;
 
@@ -153,6 +153,12 @@ class UploadImage
 
         // If need make thumbnails.
         if ($thumbnails) {
+            // If exist array with size
+            if ($size && is_array($size))
+            {
+                $this->thumbnails = $size;
+            }
+
             // Create thumbnails.
             $this->createThumbnails($imagePath, $originalPath, $newName);
         }
