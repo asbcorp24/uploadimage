@@ -43,6 +43,12 @@ class UploadImage
     protected $thumbnails;
 
     /**
+     * glideProperties array.
+     */
+    protected $glide_properties;
+
+
+    /**
      * Watermark image.
      */
     protected $watermark_path;
@@ -94,6 +100,7 @@ class UploadImage
         $this->min_width = $config['min_width'];
         $this->previewWidth = $config['previewWidth'];
         $this->editor_folder = $config['editor_folder'];
+        $this->glide_properties = $config['glide_properties'];
 
         $this->file = new File();
     }
@@ -523,6 +530,8 @@ class UploadImage
             if ($height > 0) {
                 $glideParams['h'] = $height;
             }
+
+            $glideParams = array_merge($this->glide_properties, $glideParams);
 
             GlideImage::create($originalPath)
                 ->modify($glideParams)
