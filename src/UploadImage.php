@@ -508,7 +508,7 @@ class UploadImage
             }
 
             // Path to folder where will be save image.
-            $savedImagePath = $imagePath . 'w' . $width . ($height ? 'h' . $height : '');
+            $savedImagePath = $imagePath . 'w' . $width . ($height ? 'h' . $height : '') . '/';
 
             // File with path to save image.
             $savedImagePathFile = $savedImagePath . $newName;
@@ -523,6 +523,8 @@ class UploadImage
             if ($height > 0) {
                 $params['h'] = $height;
             }
+
+            dd($savedImagePathFile);
 
             GlideImage::create($originalPath)
                 ->modify($glideParams)
