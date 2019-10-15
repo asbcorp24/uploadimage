@@ -1,5 +1,3 @@
-Forked from Original  https://github.com/arsenalleon/uploadimage
-
 # UploadImage v2.0.1
 
 For Laravel 5.3 / 5.4 / 5.5
