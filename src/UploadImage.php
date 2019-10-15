@@ -524,8 +524,6 @@ class UploadImage
                 $params['h'] = $height;
             }
 
-            dd($savedImagePathFile);
-
             GlideImage::create($originalPath)
                 ->modify($glideParams)
                 ->save($savedImagePathFile);
