@@ -521,7 +521,7 @@ class UploadImage
 
             $glideParams = ['w' => $width];
             if ($height > 0) {
-                $params['h'] = $height;
+                $glideParams['h'] = $height;
             }
 
             GlideImage::create($originalPath)
