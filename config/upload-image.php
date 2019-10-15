@@ -20,7 +20,7 @@ return [
         // Image quality for save image in percent.
         'quality' => 80,
 
-        // Array with width thumbnails for images.
+        // Array with width thumbnails for images. (You can set [['200', '150'], 300] 200 width and 150 heights)
         'thumbnails' => ['200', '400'],
 
         // Watermark image status for WYSIWYG editor (default disable).
