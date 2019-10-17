@@ -161,7 +161,8 @@ class UploadImage
         // If need make thumbnails.
         if ($thumbnails) {
             // If exist array with size
-            if ($size) {
+            if ($size && is_array($size)) 
+            {
                 $this->thumbnails = $size;
             }
 
