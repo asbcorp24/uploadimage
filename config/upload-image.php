@@ -20,8 +20,12 @@ return [
         // Image quality for save image in percent.
         'quality' => 80,
 
-        // Array with width thumbnails for images.
+        // Array with width thumbnails for images. (You can set [['200', '150'], 300] 200 width and 150 heights)
         'thumbnails' => ['200', '400'],
+
+        //You can add properties to glideImage for created thumbnails
+        // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
+        'glide_properties' => [],
 
         // Watermark image status for WYSIWYG editor (default disable).
         'watermarkEditorStatus' => false,
