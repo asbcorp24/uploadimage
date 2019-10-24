@@ -9,7 +9,7 @@ namespace Dan\UploadImage;
 use Illuminate\Filesystem\Filesystem as File;
 use Spatie\Glide\GlideImage;
 use Dan\UploadImage\Exceptions\UploadImageException;
-
+use Illuminate\Support\Str;
 class UploadImage
 {
     /**
@@ -41,6 +41,12 @@ class UploadImage
      * Width thumbnails for images.
      */
     protected $thumbnails;
+
+    /**
+     * glideProperties array.
+     */
+    protected $glide_properties;
+
 
     /**
      * Watermark image.
@@ -94,6 +100,7 @@ class UploadImage
         $this->min_width = $config['min_width'];
         $this->previewWidth = $config['previewWidth'];
         $this->editor_folder = $config['editor_folder'];
+        $this->glide_properties = $config['glide_properties'];
 
         $this->file = new File();
     }
@@ -154,7 +161,7 @@ class UploadImage
         // If need make thumbnails.
         if ($thumbnails) {
             // If exist array with size
-            if ($size && is_array($size))
+            if ($size && is_array($size)) 
             {
                 $this->thumbnails = $size;
             }
@@ -426,7 +433,7 @@ class UploadImage
      */
     public function generateNewName($contentName, $ext)
     {
-        $ind = time() . '_' . mb_strtolower(str_random(8));
+        $ind = time() . '_' . mb_strtolower(Str::random(8));
 
         // New file name.
         $newName = $contentName . '_' . $ind . '.' . $ext;
@@ -498,9 +505,18 @@ class UploadImage
     public function createThumbnails($imagePath, $originalPath, $newName)
     {
         // Get all thumbnails and save it.
-        foreach ($this->thumbnails as $width) {
+        foreach ($this->thumbnails as $thumbnailSize) {
+
+            $height = 0;
+            if (is_array($thumbnailSize)) {
+                $width = array_first($thumbnailSize);
+                $height = array_last($thumbnailSize);
+            } else {
+                $width = $thumbnailSize;
+            }
+
             // Path to folder where will be save image.
-            $savedImagePath = $imagePath . 'w' . $width . '/';
+            $savedImagePath = $imagePath . 'w' . $width . ($height ? 'h' . $height : '') . '/';
 
             // File with path to save image.
             $savedImagePathFile = $savedImagePath . $newName;
@@ -510,8 +526,16 @@ class UploadImage
 
             // Resize saved image and save to thumbnail folder
             // (help about attributes http://glide.thephpleague.com/1.0/api/quick-reference/).
+
+            $glideParams = ['w' => $width];
+            if ($height > 0) {
+                $glideParams['h'] = $height;
+            }
+
+            $glideParams = array_merge($this->glide_properties, $glideParams);
+
             GlideImage::create($originalPath)
-                ->modify(['w' => $width])
+                ->modify($glideParams)
                 ->save($savedImagePathFile);
         }
     }
@@ -525,9 +549,17 @@ class UploadImage
     public function deleteThumbnails($imagePath, $imageName)
     {
         // Get all thumbnails and delete it.
-        foreach ($this->thumbnails as $width) {
+        foreach ($this->thumbnails as $thumbnailSize) {
+
+            if (is_array($thumbnailSize)) {
+                $width = array_first($thumbnailSize);
+                $height = array_last($thumbnailSize);
+            } else {
+                $width = $thumbnailSize;
+            }
+
             // Delete old image from disk.
-            $this->file->delete($imagePath . 'w' . $width . '/' . $imageName);
+            $this->file->delete($imagePath . 'w' . $width . ($height ? 'h' . $height : '') . '/' . $imageName);
         }
     }
 }
