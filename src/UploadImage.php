@@ -433,7 +433,7 @@ class UploadImage
      */
     public function generateNewName($contentName, $ext)
     {
-        $ind = time() . '_' . mb_strtolower(Str::random(8));
+        $ind = time() . '_' . mb_strtolower(Str::random(9));
 
         // New file name.
         $newName = $contentName . '_' . $ind . '.' . $ext;
